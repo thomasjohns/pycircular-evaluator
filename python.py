@@ -27,11 +27,13 @@ TokenLiteral = Literal[
     '-=',
     '/=',
     '*=',
+    '%=',
+    '!=',
     '->',
     '|',
     ':',
     ':=',
-    '\'',
+    "'",
     '"',
     '.',
     ',',
@@ -39,6 +41,7 @@ TokenLiteral = Literal[
     '_',
     'instance_keyword',
     'instance_string',
+    'instance_number',
     'instance_name',
     'instance_comment',
     'instance_type_annotation',
@@ -131,15 +134,21 @@ class Lexer:
         else:
             self.char = None
 
-    def peak(self) -> str | None:
+    def peek(self) -> str | None:
         if self.pos + 1 < len(self.src):
             return self.src[self.pos + 1]
         else:
             return None
 
     def eat_expecting(self, expectation: str) -> None:
-        assert self.char == expectation
+        fail_msg = f'{self.char} != {expectation} at line: {self.line}, col: {self.col}'
+        assert self.char == expectation, fail_msg
         self.eat()
+
+    def syntax_error_on_char(self) -> None:
+        raise SyntaxError(
+            f'Unexpected char {self.char} on line {self.line} in col {self.col}.'
+        )
 
     def lex(self) -> list[Token]:
         while self.pos < len(self.src):
@@ -150,20 +159,63 @@ class Lexer:
                 case ' ':
                     self.eat()
                 case '=':
-                    match (next_char := self.peak()):
-                        # TODO: handle other chars
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('==')
+                            self.eat_expecting('=')
+                            self.eat_expecting('=')
+                        case _:
+                            self.push_token(self.char)
+                            self.eat()
+                case '%':
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('%=')
+                            self.eat_expecting('%')
+                            self.eat_expecting('=')
+                        case _:
+                            self.push_token(self.char)
+                            self.eat()
+                case '+':
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('+=')
+                            self.eat_expecting('+')
+                            self.eat_expecting('=')
                         case _:
                             self.push_token(self.char)
                             self.eat()
                 case '*':
-                    match (next_char := self.peak()):
-                        # TODO: handle other chars
+                    match (next_char := self.peek()):
+                        case '*':
+                            self.push_token('**')
+                            self.eat_expecting('*')
+                            self.eat_expecting('*')
+                        case '=':
+                            self.push_token('*=')
+                            self.eat_expecting('*')
+                            self.eat_expecting('=')
+                        case _:
+                            self.push_token(self.char)
+                            self.eat()
+                case '/':
+                    match (next_char := self.peek()):
+                        case '/':
+                            self.push_token('//')
+                            self.eat_expecting('/')
+                            self.eat_expecting('/')
+                        case '=':
+                            self.push_token('/=')
+                            self.eat_expecting('/')
+                            self.eat_expecting('=')
                         case _:
                             self.push_token(self.char)
                             self.eat()
                 case '-':
-                    match (next_char := self.peak()):
-                        # TODO: handle other chars
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('-=')
+                            self.eat_expecting('=')
                         case '>':
                             self.push_token('->')
                             self.eat()
@@ -172,33 +224,56 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '>':
-                    match (next_char := self.peak()):
-                        # TODO: handle other chars
+                    match (next_char := self.peek()):
                         case '=':
                             self.push_token('>=')
+                            self.eat_expecting('>')
+                            self.eat_expecting('=')
+                        case _:
+                            self.push_token(self.char)
                             self.eat()
+                case '<':
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('<=')
+                            self.eat_expecting('<')
                             self.eat_expecting('=')
                         case _:
                             self.push_token(self.char)
                             self.eat()
                 case ':':
-                    # TODO: handle walrus (:=)
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token(':=')
+                            self.eat_expecting(':')
+                            self.eat_expecting('=')
+                        case _:
+                            self.push_token(self.char)
+                            self.eat()
+                case '!':
+                    match (next_char := self.peek()):
+                        case '=':
+                            self.push_token('!=')
+                            self.eat_expecting('!')
+                            self.eat_expecting('=')
+                        case _:
+                            self.syntax_error_on_char()
+                case '|' | '{' | '}' | '[' | ']' | '(' | ')' | '.' | ',':
                     self.push_token(self.char)
                     self.eat()
-                case '(' | ')' | '.' | ',':
-                    self.push_token(self.char)
-                    self.eat()
-                case '\'' | '"':
+                case "'" | '"':
                     self.lex_string(start_char=self.char)
-                case str():
+                case s if s.isalpha() or s.isnumeric() or s == '_':
                     self.lex_name_or_keyword()
+                case i if i.isnumeric():
+                    self.lex_number()
+                case '#':
+                    self.lex_comment()
                 case _:
-                    raise SyntaxError(
-                        f'Unexpected char {self.char} on line {self.line} in col {self.col}.'
-                    )
+                    self.syntax_error_on_char()
         return self.tokens
 
-    def lex_string(self, start_char: Literal['\'', '"']) -> None:
+    def lex_string(self, start_char: Literal["'", '"']) -> None:
         chars: list[str] = []
         self.eat()
         while self.char != start_char:
@@ -221,6 +296,23 @@ class Lexer:
         else:
             lit = 'instance_name'
         self.push_token(lit, instance)
+
+    def lex_number(self) -> None:
+        chars: list[str] = []
+        while self.pos < len(self.src) and (self.char.isnumeric() or self.char == '.'):
+            chars.append(self.char)
+            self.eat()
+        instance = ''.join(chars)
+        self.push_token('instance_number', instance)
+
+    def lex_comment(self) -> None:
+        self.eat_expecting('#')
+        chars: list[str] = []
+        while self.pos < len(self.src) and self.char != '\n':
+            chars.append(self.char)
+            self.eat()
+        instance = ''.join(chars)
+        self.push_token('instance_comment', instance)
 
     def lex_indentation(self) -> None:
         # NOTE: We assume 4 for now :)
@@ -257,6 +349,9 @@ def main() -> int:
     tokens = lexer.lex()
     print('-' * 25, 'tokens', '-' * 25)
     print_tokens(tokens)
+    # TODO create token to code printer, then test code to token' to code' to token'' to code''
+    #      and assert code' == code'' where code = python.py
+    #      and assert token' == token''
     return 0
 
 
