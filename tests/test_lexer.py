@@ -4,6 +4,7 @@ import pytest
 
 from python import Lexer
 from python import print_tokens
+from python import tokens_to_src
 
 
 @pytest.mark.parametrize('src,expected_printed_tokens', [
@@ -25,7 +26,8 @@ from python import print_tokens
                     print('hello Mars')
 
 
-            main()'''
+            main()
+            '''
         ),
         dedent('''\
             keyword(class) name(Multiplication) :
@@ -39,13 +41,14 @@ from python import print_tokens
 
             keyword(def) name(main) ( ) :
             indent keyword(if) name(Multiplication) ( name(2) , name(3) ) . name(compute) ( ) >= name(10) :
-            indent indent keyword(print) ( string(hello world) )
+            indent indent keyword(print) ( string('hello world') )
             indent keyword(else) :
-            indent indent keyword(print) ( string(hello Mars) )
+            indent indent keyword(print) ( string('hello Mars') )
 
 
-            name(main) ( )'''
-       ),
+            name(main) ( )
+            '''
+        ),
     ),
 ])
 def test_lex_program(src, expected_printed_tokens, capsys):
@@ -53,4 +56,13 @@ def test_lex_program(src, expected_printed_tokens, capsys):
     tokens = lexer.lex()
     print_tokens(tokens)
     captured = capsys.readouterr()
-    assert captured.out.strip() == expected_printed_tokens.strip()
+    assert captured.out == expected_printed_tokens
+
+
+def test_src_to_tokens_to_src():
+    with open('python.py', 'r') as fp:
+        src = fp.read()
+    lexer = Lexer(src)
+    tokens = lexer.lex()
+    generated_src_from_tokens = tokens_to_src(tokens)
+    assert generated_src_from_tokens == src

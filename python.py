@@ -44,7 +44,6 @@ TokenLiteral = Literal[
     'instance_number',
     'instance_name',
     'instance_comment',
-    'instance_type_annotation',
     'instance_indent',
 ]
 
@@ -75,6 +74,7 @@ KEYWORDS = [
     'repr',
     'len',
     'range',
+    'enumerate',
     'max',
     'min',
     'self',
@@ -116,11 +116,13 @@ class Lexer:
         self.pos = 0
         self.line = 1
         self.col = 1
+        self.line_start = self.line
+        self.col_start = self.col
         self.char: str | None = self.src[self.pos] if self.src else None
         self.tokens: list[Token] = []
 
     def push_token(self, lit: TokenLiteral, instance: str | None = None) -> None:
-        token = Token(self.line, self.col, lit, instance)
+        token = Token(self.line_start, self.col_start, lit, instance)
         self.tokens.append(token)
 
     def eat(self) -> None:
@@ -129,6 +131,8 @@ class Lexer:
         if self.char == '\n':
             self.line += 1
             self.col = 1
+            self.line_start = self.line
+            self.col_start = self.col
         if self.pos < len(self.src):
             self.char = self.src[self.pos]
         else:
@@ -152,6 +156,8 @@ class Lexer:
 
     def lex(self) -> list[Token]:
         while self.pos < len(self.src):
+            self.line_start = self.line
+            self.col_start = self.col
             match self.char:
                 case '\n':
                     self.eat()
@@ -280,7 +286,7 @@ class Lexer:
             chars.append(self.char)
             self.eat()
         instance = ''.join(chars)
-        self.push_token('instance_string', instance)
+        self.push_token('instance_string', f'{start_char}{instance}{start_char}')
         self.eat_expecting(start_char)
 
     def lex_name_or_keyword(self) -> None:
@@ -339,6 +345,38 @@ def print_tokens(tokens: list[Token]) -> str:
         line += 1
 
 
+class GrowingLineBuffer:
+    def __init__(self) -> None:
+        self._data: list[list[str]] = []
+
+    def insert(self, line: int, col: int, chars: str) -> None:
+        while len(self._data) <= line:
+            self._data.append([])
+        while len(self._data[line - 1]) < col - 1 + len(chars):
+            self._data[line - 1].append(' ')
+        for i, char in enumerate(chars):
+            self._data[line - 1][col - 1 + i] = char
+
+    def __str__(self) -> str:
+        return '\n'.join(''.join(char for char in line) for line in self._data)
+
+
+def tokens_to_src(tokens: list[Token]) -> str:
+    buff = GrowingLineBuffer()
+    for token in tokens:
+        match (token.lit, token.instance):
+            case ('instance_comment', _):
+                content = '#' + token.instance
+            case ('instance_indent', _):
+                content = '    '
+            case (_, None):
+                content = token.lit
+            case (_, _):
+                content = token.instance
+        buff.insert(token.line, token.col, content)
+    return str(buff)
+
+
 def main() -> int:
     source_file = sys.argv[-1]
     with open(source_file, 'r') as fp:
@@ -349,9 +387,9 @@ def main() -> int:
     tokens = lexer.lex()
     print('-' * 25, 'tokens', '-' * 25)
     print_tokens(tokens)
-    # TODO create token to code printer, then test code to token' to code' to token'' to code''
-    #      and assert code' == code'' where code = python.py
-    #      and assert token' == token''
+    print('-' * 25, 'tokens back to source', '-' * 25)
+    src = tokens_to_src(tokens)
+    print(src)
     return 0
 
 
