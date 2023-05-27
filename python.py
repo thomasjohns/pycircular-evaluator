@@ -1,14 +1,17 @@
 import sys
+from typing import assert_never
 from typing import Literal
+from typing import NoReturn
+from typing import Final
 
 
-TokenLiteral = Literal[
+TokenKind = Literal[
     '(',
     ')',
     '[',
     ']',
     '{',
-    '{',
+    '}',
     '=',
     '==',
     '>',
@@ -47,7 +50,7 @@ TokenLiteral = Literal[
     'instance_indent',
 ]
 
-KEYWORDS = [
+KEYWORDS: Final = [
     'if',
     'else',
     'elif',
@@ -85,28 +88,30 @@ KEYWORDS = [
     '__name__',
 ]
 
+EOF: Final = 'EOF'
+
 
 class Token:
     def __init__(
         self,
         line: int,
         col: int,
-        lit: TokenLiteral,
+        kind: TokenKind,
         instance: str | None = None,
     ) -> None:
         self.line = line
         self.col = col
-        self.lit = lit
+        self.kind = kind
         self.instance = instance
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.instance is None:
-            if self.lit == 'instance_indent':
+            if self.kind == 'instance_indent':
                 return 'indent'
             else:
-                return self.lit
+                return self.kind
         else:
-            instance_kind = self.lit.removeprefix('instance_')
+            instance_kind = self.kind.removeprefix('instance_')
             return f'{instance_kind}({self.instance})'
 
 
@@ -118,11 +123,11 @@ class Lexer:
         self.col = 1
         self.line_start = self.line
         self.col_start = self.col
-        self.char: str | None = self.src[self.pos] if self.src else None
+        self.char: str = self.src[self.pos] if self.src else EOF
         self.tokens: list[Token] = []
 
-    def push_token(self, lit: TokenLiteral, instance: str | None = None) -> None:
-        token = Token(self.line_start, self.col_start, lit, instance)
+    def push_token(self, kind: TokenKind, instance: str | None = None) -> None:
+        token = Token(self.line_start, self.col_start, kind, instance)
         self.tokens.append(token)
 
     def eat(self) -> None:
@@ -136,7 +141,7 @@ class Lexer:
         if self.pos < len(self.src):
             self.char = self.src[self.pos]
         else:
-            self.char = None
+            self.char = EOF
 
     def peek(self) -> str | None:
         if self.pos + 1 < len(self.src):
@@ -297,11 +302,12 @@ class Lexer:
             chars.append(self.char)
             self.eat()
         instance = ''.join(chars)
+        kind: Literal['instance_keyword', 'instance_name']
         if instance in KEYWORDS:
-            lit = 'instance_keyword'
+            kind = 'instance_keyword'
         else:
-            lit = 'instance_name'
-        self.push_token(lit, instance)
+            kind = 'instance_name'
+        self.push_token(kind, instance)
 
     def lex_number(self) -> None:
         chars: list[str] = []
@@ -335,7 +341,7 @@ class Lexer:
             self.push_token('instance_indent')
 
 
-def print_tokens(tokens: list[Token]) -> str:
+def print_tokens(tokens: list[Token]) -> None:
     total_lines = max(token.line for token in tokens)
     line = 1
     while line <= total_lines:
