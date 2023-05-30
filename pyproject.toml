@@ -1,0 +1,13 @@
+[tool.mypy]
+strict = true
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportCallInDefaultInitializer = "error"
+reportImplicitStringConcatenation = "error"
+#reportMissingSuperCall = "error"
+reportPropertyTypeMismatch = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUnusedCallResult = "error"
+reportUnusedImport = "warning"
