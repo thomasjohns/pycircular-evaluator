@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import sys
 from typing import assert_never
+from typing import Final
 from typing import Literal
 from typing import NoReturn
-from typing import Final
+from typing import TypeAlias
 from typing import Union
 
 
@@ -386,44 +389,75 @@ def tokens_to_src(tokens: list[Token]) -> str:
     return str(buff)
 
 
+ExprContext = Literal['load', 'store', 'del']
+
+
 class Module:
-    def __init__(self, statements: list['Statement']) -> None:
-        self.statements = statements
+    def __init__(self, body: list[Stmt]) -> None:
+        self.body = body
+
+
+class Arg:
+    def __init__(self, name: str, arg_type: Expr | None) -> None:
+        self.name = name
+        self.arg_type = arg_type
+
+
+class FunArgs:
+    def __init__(self, args: list[Arg], defaults: list[Expr]) -> None:
+        self.args = args
+        self.defaults = defaults
 
 
 class FunDef:
-    # TODO
-    ...
+    def __init__(
+        self,
+        name: str,
+        args: FunArgs,
+        body: list[Stmt],
+        return_type: Expr | None,
+    ) -> None:
+        self.name = name
+        self.args = args
+        self.body = body
+        self.return_type = return_type
 
 
 class ClassDef:
-    # TODO
-    ...
+    def __init__(self, name: str, body: list[Stmt]) -> None:
+        self.name = name
+        self.body = body
 
 
 class Return:
-    # TODO
-    ...
+    def __init__(self, value: Expr | None) -> None:
+        self.value = value
 
 
 class Assign:
-    # TODO
-    ...
+    def __init__(self, target: Expr, value: Expr, assign_type: Expr | None) -> None:
+        self.target = target
+        self.value = value
+        self.assign_type = assign_type
 
 
 class For:
-    # TODO
-    ...
+    def __init__(self, target: Expr, iter_expr: Expr, body: list[Stmt]) -> None:
+        self.target = target
+        self.iter_expr = iter_expr
+        self.body = body
 
 
 class While:
-    # TODO
-    ...
+    def __init__(self, test: Expr, body: list[Stmt]) -> None:
+        self.test = test
+        self.body = body
 
 
 class If:
-    # TODO
-    ...
+    def __init__(self, test: Expr, body: list[Stmt]) -> None:
+        self.test = test
+        self.body = body
 
 
 class With:
@@ -468,19 +502,30 @@ class Pass:
     ...
 
 
+BoolOpOp = Literal['and', 'or']
+BinOpOp = Literal['+', '-', '*', '/', '%', '**']
+UnaryOpOp = Literal['+', '-', 'not']
+CompOpOp = Literal['==', '!=', '<', '<=', '>', '>=', 'is', 'is not', 'in', 'not in']
+
+
 class BoolOp:
-    # TODO
-    ...
+    def __init__(self, left: Expr, op: BoolOpOp, right: Expr) -> None:
+        self.left = left
+        self.op = op
+        self.right = right
 
 
 class BinOp:
-    # TODO
-    ...
+    def __init__(self, left: Expr, op: BinOpOp, right: Expr) -> None:
+        self.left = left
+        self.op = op
+        self.right = right
 
 
 class UnaryOp:
-    # TODO
-    ...
+    def __init__(self, op: UnaryOpOp, operand: Expr) -> None:
+        self.op = op
+        self.operand = operand
 
 
 class IfExp:
@@ -513,14 +558,24 @@ class DictComp:
     ...
 
 
-class Compare:
-    # TODO
-    ...
+class CompOp:
+    def __init__(self, left: Expr, op: CompOpOp, right: Expr) -> None:
+        self.left = left
+        self.op = op
+        self.right = right
+
+
+class KeyWord:
+    def __init__(self, name: str, value: Expr) -> None:
+        self.name = name
+        self.value = value
 
 
 class Call:
-    # TODO
-    ...
+    def __init__(self, func: Name, args: list[Expr], keywords: list[KeyWord]) -> None:
+        self.func = func
+        self.args = args
+        self.keywords = keywords
 
 
 class FormattedValue:
@@ -534,13 +589,16 @@ class JoinedStr:
 
 
 class Attribute:
-    # TODO
-    ...
+    def __init__(self, value: Expr, attr: str, ctx: ExprContext) -> None:
+        self.value = value
+        self.attr = attr
+        self.ctx = ctx
 
 
 class Name:
-    # TODO
-    ...
+    def __init__(self, lit: str, ctx: ExprContext) -> None:
+        self.lit = lit
+        self.ctx = ctx
 
 
 class List:
@@ -574,10 +632,11 @@ class Str:
         self.quote_style = quote_style
 
 
-Constant = Union[Int, Float, Str]
+Constant: TypeAlias = Union[Int, Float, Str]
 
-
-Statement = Union[
+Stmt: TypeAlias = Union[
+    Arg,
+    FunArgs,
     FunDef,
     ClassDef,
     Return,
@@ -596,7 +655,7 @@ Statement = Union[
     Pass,
 ]
 
-Expression = Union[
+Expr: TypeAlias = Union[
     BoolOp,
     BinOp,
     UnaryOp,
@@ -606,7 +665,8 @@ Expression = Union[
     ListComp,
     SetComp,
     DictComp,
-    Compare,
+    CompOp,
+    KeyWord,
     Call,
     FormattedValue,
     JoinedStr,
@@ -618,7 +678,7 @@ Expression = Union[
     Constant,
 ]
 
-Node = Union[Module, Statement, Expression]
+Node: TypeAlias = Union[Module, Stmt, Expr]
 
 
 class Parser:
@@ -627,6 +687,10 @@ class Parser:
 
     def parse(self) -> Node:
         # TODO
+        for token in self.tokens:
+            match token:
+                case _:
+                    pass
         return Int(42)
 
 
@@ -637,6 +701,12 @@ class CodePrinter:
     def pprint(self) -> None:
         match self.node:
             case Module():
+                # TODO
+                pass
+            case Arg():
+                # TODO
+                pass
+            case FunArgs():
                 # TODO
                 pass
             case FunDef():
@@ -714,7 +784,10 @@ class CodePrinter:
             case DictComp():
                 # TODO
                 pass
-            case Compare():
+            case CompOp():
+                # TODO
+                pass
+            case KeyWord():
                 # TODO
                 pass
             case Call():
@@ -750,7 +823,7 @@ class CodePrinter:
             case Str():
                 # TODO
                 pass
-            case _:
+            case _:  # pyright: ignore
                 assert_never(self.node)
 
 
