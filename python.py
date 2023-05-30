@@ -3,6 +3,7 @@ from typing import assert_never
 from typing import Literal
 from typing import NoReturn
 from typing import Final
+from typing import Union
 
 
 TokenKind = Literal[
@@ -370,17 +371,387 @@ class GrowingLineBuffer:
 def tokens_to_src(tokens: list[Token]) -> str:
     buff = GrowingLineBuffer()
     for token in tokens:
-        match (token.lit, token.instance):
+        match (token.kind, token.instance):
             case ('instance_comment', _):
+                assert token.instance is not None
                 content = '#' + token.instance
             case ('instance_indent', _):
                 content = '    '
             case (_, None):
-                content = token.lit
+                content = token.kind
             case (_, _):
+                assert token.instance is not None
                 content = token.instance
         buff.insert(token.line, token.col, content)
     return str(buff)
+
+
+class Module:
+    def __init__(self, statements: list['Statement']) -> None:
+        self.statements = statements
+
+
+class FunDef:
+    # TODO
+    ...
+
+
+class ClassDef:
+    # TODO
+    ...
+
+
+class Return:
+    # TODO
+    ...
+
+
+class Assign:
+    # TODO
+    ...
+
+
+class For:
+    # TODO
+    ...
+
+
+class While:
+    # TODO
+    ...
+
+
+class If:
+    # TODO
+    ...
+
+
+class With:
+    # TODO
+    ...
+
+
+class Match:
+    # TODO
+    ...
+
+
+class Raise:
+    # TODO
+    ...
+
+
+class Try:
+    # TODO
+    ...
+
+
+class Assert:
+    # TODO
+    ...
+
+
+class Import:
+    # TODO
+    ...
+
+
+class Break:
+    ...
+
+
+class Continue:
+    ...
+
+
+class Pass:
+    ...
+
+
+class BoolOp:
+    # TODO
+    ...
+
+
+class BinOp:
+    # TODO
+    ...
+
+
+class UnaryOp:
+    # TODO
+    ...
+
+
+class IfExp:
+    # TODO
+    ...
+
+
+class Dict:
+    # TODO
+    ...
+
+
+class Set:
+    # TODO
+    ...
+
+
+class ListComp:
+    # TODO
+    ...
+
+
+class SetComp:
+    # TODO
+    ...
+
+
+class DictComp:
+    # TODO
+    ...
+
+
+class Compare:
+    # TODO
+    ...
+
+
+class Call:
+    # TODO
+    ...
+
+
+class FormattedValue:
+    # TODO
+    ...
+
+
+class JoinedStr:
+    # TODO
+    ...
+
+
+class Attribute:
+    # TODO
+    ...
+
+
+class Name:
+    # TODO
+    ...
+
+
+class List:
+    # TODO
+    ...
+
+
+class Tuple:
+    # TODO
+    ...
+
+
+class Slice:
+    # TODO
+    ...
+
+
+class Int:
+    def __init__(self, lit: int) -> None:
+        self.lit = lit
+
+
+class Float:
+    def __init__(self, lit: float) -> None:
+        self.lit = lit
+
+
+class Str:
+    def __init__(self, lit: str, quote_style: Literal['"', "'"]) -> None:
+        self.lit = lit
+        self.quote_style = quote_style
+
+
+Constant = Union[Int, Float, Str]
+
+
+Statement = Union[
+    FunDef,
+    ClassDef,
+    Return,
+    Assign,
+    For,
+    While,
+    If,
+    With,
+    Match,
+    Raise,
+    Try,
+    Assert,
+    Import,
+    Break,
+    Continue,
+    Pass,
+]
+
+Expression = Union[
+    BoolOp,
+    BinOp,
+    UnaryOp,
+    IfExp,
+    Dict,
+    Set,
+    ListComp,
+    SetComp,
+    DictComp,
+    Compare,
+    Call,
+    FormattedValue,
+    JoinedStr,
+    Attribute,
+    Name,
+    List,
+    Tuple,
+    Slice,
+    Constant,
+]
+
+Node = Union[Module, Statement, Expression]
+
+
+class Parser:
+    def __init__(self, tokens: list[Token]) -> None:
+        self.tokens = tokens
+
+    def parse(self) -> Node:
+        # TODO
+        return Int(42)
+
+
+class CodePrinter:
+    def __init__(self, node: Node) -> None:
+        self.node = node
+
+    def pprint(self) -> None:
+        match self.node:
+            case Module():
+                # TODO
+                pass
+            case FunDef():
+                # TODO
+                pass
+            case ClassDef():
+                # TODO
+                pass
+            case Return():
+                # TODO
+                pass
+            case Assign():
+                # TODO
+                pass
+            case For():
+                # TODO
+                pass
+            case While():
+                # TODO
+                pass
+            case If():
+                # TODO
+                pass
+            case With():
+                # TODO
+                pass
+            case Match():
+                # TODO
+                pass
+            case Raise():
+                # TODO
+                pass
+            case Try():
+                # TODO
+                pass
+            case Assert():
+                # TODO
+                pass
+            case Import():
+                # TODO
+                pass
+            case Break():
+                # TODO
+                pass
+            case Continue():
+                # TODO
+                pass
+            case Pass():
+                # TODO
+                pass
+            case BoolOp():
+                # TODO
+                pass
+            case BinOp():
+                # TODO
+                pass
+            case UnaryOp():
+                # TODO
+                pass
+            case IfExp():
+                # TODO
+                pass
+            case Dict():
+                # TODO
+                pass
+            case Set():
+                # TODO
+                pass
+            case ListComp():
+                # TODO
+                pass
+            case SetComp():
+                # TODO
+                pass
+            case DictComp():
+                # TODO
+                pass
+            case Compare():
+                # TODO
+                pass
+            case Call():
+                # TODO
+                pass
+            case FormattedValue():
+                # TODO
+                pass
+            case JoinedStr():
+                # TODO
+                pass
+            case Attribute():
+                # TODO
+                pass
+            case Name():
+                # TODO
+                pass
+            case List():
+                # TODO
+                pass
+            case Tuple():
+                # TODO
+                pass
+            case Slice():
+                # TODO
+                pass
+            case Int():
+                # TODO
+                pass
+            case Float():
+                # TODO
+                pass
+            case Str():
+                # TODO
+                pass
+            case _:
+                assert_never(self.node)
 
 
 def main() -> int:
