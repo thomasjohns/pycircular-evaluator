@@ -154,7 +154,7 @@ class Lexer:
         assert self.char == expectation, fail_msg
         self.eat()
 
-    def syntax_error_on_char(self) -> None:
+    def syntax_error_on_char(self) -> NoReturn:
         raise SyntaxError(
             f'Unexpected char {self.char} on line {self.line} in col {self.col}.'
         )
@@ -170,7 +170,7 @@ class Lexer:
                 case ' ':
                     self.eat()
                 case '=':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('==')
                             self.eat_expecting('=')
@@ -179,7 +179,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '%':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('%=')
                             self.eat_expecting('%')
@@ -188,7 +188,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '+':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('+=')
                             self.eat_expecting('+')
@@ -197,7 +197,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '*':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '*':
                             self.push_token('**')
                             self.eat_expecting('*')
@@ -210,7 +210,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '/':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '/':
                             self.push_token('//')
                             self.eat_expecting('/')
@@ -223,7 +223,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '-':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('-=')
                             self.eat_expecting('=')
@@ -235,7 +235,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '>':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('>=')
                             self.eat_expecting('>')
@@ -244,7 +244,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '<':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('<=')
                             self.eat_expecting('<')
@@ -253,7 +253,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case ':':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token(':=')
                             self.eat_expecting(':')
@@ -262,7 +262,7 @@ class Lexer:
                             self.push_token(self.char)
                             self.eat()
                 case '!':
-                    match (next_char := self.peek()):
+                    match self.peek():
                         case '=':
                             self.push_token('!=')
                             self.eat_expecting('!')
@@ -337,7 +337,7 @@ class Lexer:
                 f'Unexpected indent on line {self.line}.'
             )
         num_indents = num_spaces // 4
-        for indent in range(num_indents):
+        for _ in range(num_indents):
             self.push_token('instance_indent')
 
 
@@ -400,4 +400,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    main()
+    _ = main()
