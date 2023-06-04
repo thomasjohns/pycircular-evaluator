@@ -230,6 +230,7 @@ class Lexer:
                     match self.peek():
                         case '=':
                             self.push_token('-=')
+                            self.eat_expecting('-')
                             self.eat_expecting('=')
                         case '>':
                             self.push_token('->')
