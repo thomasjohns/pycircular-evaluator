@@ -727,6 +727,180 @@ class Parser:
         return Int(42)
 
 
+class ASTPrinter:
+    def __init__(self) -> None:
+        self._num_spaces = 0
+
+    def indent(self) -> None:
+        self._num_spaces += 4
+
+    def dendent(self) -> None:
+        self._num_spaces -= 4
+
+    def ip(self) -> None:
+        print(' ' * self._numspaces, end='')
+
+    def nl(self) -> None:
+        print()
+
+    def p(self, char: str) -> None:
+        print(char, end='')
+
+    def pname(self, node: Node) -> None:
+        print(node.__class__.__name__, end='')
+
+    def pnode(self, node: Node) -> None:
+        match node:
+            case Module():
+                self.pname(node)
+                self.p('(')
+                self.nl()
+                self.indent()
+                self.ip('body=[')
+                self.nl()
+                self.indent()
+                for stmt in node.body:
+                    self.pnode(stmt)
+                self.nl()
+                self.dedent()
+                self.p('],')
+                self.nl()
+                self.dedent()
+                self.p(')')
+                self.nl()
+            case FunArg():
+                self.pname(node)
+                self.p('(')
+                self.nl()
+                self.indent()
+                self.ip(f'name={node.name},')
+                self.nl()
+                self.ip(f'default={node.default},')
+                self.nl()
+                self.ip(f'annotated={node.annotated},')
+                self.nl()
+                self.ip(f'type_expr={node.type_expr},')
+                self.nl()
+                self.dedent()
+                self.iprint('),')
+                self.nl()
+            case FunDef():
+                # TODO
+                pass
+            case ClassDef():
+                # TODO
+                pass
+            case Return():
+                # TODO
+                pass
+            case Assign():
+                # TODO
+                pass
+            case For():
+                # TODO
+                pass
+            case While():
+                # TODO
+                pass
+            case If():
+                # TODO
+                pass
+            case With():
+                # TODO
+                pass
+            case Match():
+                # TODO
+                pass
+            case Raise():
+                # TODO
+                pass
+            case Try():
+                # TODO
+                pass
+            case Assert():
+                # TODO
+                pass
+            case Import():
+                # TODO
+                pass
+            case Break():
+                # TODO
+                pass
+            case Continue():
+                # TODO
+                pass
+            case Pass():
+                # TODO
+                pass
+            case BoolOp():
+                # TODO
+                pass
+            case BinOp():
+                # TODO
+                pass
+            case UnaryOp():
+                # TODO
+                pass
+            case IfExp():
+                # TODO
+                pass
+            case Dict():
+                # TODO
+                pass
+            case Set():
+                # TODO
+                pass
+            case ListComp():
+                # TODO
+                pass
+            case SetComp():
+                # TODO
+                pass
+            case DictComp():
+                # TODO
+                pass
+            case CompOp():
+                # TODO
+                pass
+            case KeyWord():
+                # TODO
+                pass
+            case Call():
+                # TODO
+                pass
+            case FormattedValue():
+                # TODO
+                pass
+            case JoinedStr():
+                # TODO
+                pass
+            case Attribute():
+                # TODO
+                pass
+            case Name():
+                # TODO
+                pass
+            case List():
+                # TODO
+                pass
+            case Tuple():
+                # TODO
+                pass
+            case Slice():
+                # TODO
+                pass
+            case Str():
+                # TODO
+                pass
+            case Int() | Float():
+                self.pname(node)
+                self.p('(')
+                self.p(node.lit)
+                self.p(')')
+            case _:  # pyright: ignore
+                assert_never(self.node)
+
+
 class CodePrinter:
     def __init__(self, node: Node) -> None:
         self.node = node
