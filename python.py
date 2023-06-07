@@ -1044,6 +1044,11 @@ def main() -> int:
     print('-' * 25, 'tokens back to source', '-' * 25)
     src = tokens_to_src(tokens)
     print(src)
+    parser = Parser(tokens)
+    ast = parser.parse()
+    print('-' * 25, 'AST', '-' * 25)
+    ast_printer = ASTPrinter()
+    ast_printer.pnode(ast)
     return 0
 
 
