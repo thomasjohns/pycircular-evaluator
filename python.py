@@ -398,23 +398,19 @@ class Module:
         self.body = body
 
 
-class Arg:
-    def __init__(self, name: str, arg_type: Expr | None) -> None:
+class FunArg:
+    def __init__(self, name: str, default: Expr, annotated: bool, type_expr: Expr) -> None:
         self.name = name
-        self.arg_type = arg_type
-
-
-class FunArgs:
-    def __init__(self, args: list[Arg], defaults: list[Expr]) -> None:
-        self.args = args
-        self.defaults = defaults
+        self.default = default
+        self.annotated = annotated
+        self.type_expr = type_expr
 
 
 class FunDef:
     def __init__(
         self,
         name: str,
-        args: FunArgs,
+        args: list[FunArg],
         body: list[Stmt],
         return_type: Expr | None,
     ) -> None:
@@ -636,8 +632,7 @@ class Str:
 Constant: TypeAlias = Union[Int, Float, Str]
 
 Stmt: TypeAlias = Union[
-    Arg,
-    FunArgs,
+    FunArg,
     FunDef,
     ClassDef,
     Return,
@@ -704,10 +699,7 @@ class CodePrinter:
             case Module():
                 # TODO
                 pass
-            case Arg():
-                # TODO
-                pass
-            case FunArgs():
+            case FunArg():
                 # TODO
                 pass
             case FunDef():
