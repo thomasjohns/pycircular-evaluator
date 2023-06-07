@@ -678,6 +678,43 @@ Node: TypeAlias = Union[Module, Stmt, Expr]
 
 
 class Parser:
+    '''
+    --- Grammer ---
+
+    stmts: stmt+
+    stmt:
+        | assign
+        | return
+        | import
+        | raise
+        | pass
+        | break
+        | continue
+        | assert
+        | fun_def
+        | if
+        | class_def
+        | with
+        | for
+        | try
+        | while
+        | match
+    assign:
+        | NAME : expr = expr
+        | NAME assignop expr
+    assignop:
+        | '='
+        | '+='
+        | '-='
+        | '*='
+    return: 'return' expr
+    raise: 'raise' expr
+    assert: 'assert' expr
+    import: import_name | import_from
+    import_name: ...
+    import_from: ...
+    '''
+
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens = tokens
 
