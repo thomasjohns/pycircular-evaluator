@@ -50,7 +50,8 @@ TokenKind = Literal[
     'instance_string',
     'instance_number',
     'instance_name',
-    'instance_comment',
+    'instance_hash_comment',
+    'instance_quote_comment',
     'instance_indent',
 ]
 
@@ -130,8 +131,17 @@ class Lexer:
         self.char: str = self.src[self.pos] if self.src else EOF
         self.tokens: list[Token] = []
 
-    def push_token(self, kind: TokenKind, instance: str | None = None) -> None:
-        token = Token(self.line_start, self.col_start, kind, instance)
+    def push_token(
+        self,
+        kind: TokenKind,
+        instance: str | None = None,
+        multi_line_start: int | None = None,
+    ) -> None:
+        if multi_line_start is None:
+            line_start = self.line_start
+        else:
+            line_start = multi_line_start
+        token = Token(line_start, self.col_start, kind, instance)
         self.tokens.append(token)
 
     def eat(self) -> None:
@@ -147,9 +157,9 @@ class Lexer:
         else:
             self.char = EOF
 
-    def peek(self) -> str | None:
-        if self.pos + 1 < len(self.src):
-            return self.src[self.pos + 1]
+    def peek(self, ahead: int = 1) -> str | None:
+        if self.pos + ahead < len(self.src):
+            return self.src[self.pos + ahead]
         else:
             return None
 
@@ -278,13 +288,16 @@ class Lexer:
                     self.push_token(self.char)
                     self.eat()
                 case "'" | '"':
-                    self.lex_string(start_char=self.char)
+                    if (self.peek(ahead=1), self.peek(ahead=2)) == (self.char, self.char):
+                        self.lex_quote_comment(start_char=self.char)
+                    else:
+                        self.lex_string(start_char=self.char)
                 case s if s.isalpha() or s.isnumeric() or s == '_':
                     self.lex_name_or_keyword()
                 case i if i.isnumeric():
                     self.lex_number()
                 case '#':
-                    self.lex_comment()
+                    self.lex_hash_comment()
                 case _:
                     self.syntax_error_on_char()
         return self.tokens
@@ -322,14 +335,35 @@ class Lexer:
         instance = ''.join(chars)
         self.push_token('instance_number', instance)
 
-    def lex_comment(self) -> None:
+    def lex_quote_comment(self, start_char: Literal["'", '"']) -> None:
+        multi_line_start = self.line_start
+        chars: list[str] = [start_char]
+        for _ in range(3):
+            chars.append(self.char)
+            self.eat_expecting(start_char)
+        while self.pos < len(self.src):
+            if self.char != start_char:
+                chars.append(self.char)
+                self.eat()
+            elif (self.peek(ahead=1), self.peek(ahead=2)) == (start_char, start_char):
+                for _ in range(3):
+                    chars.append(start_char)
+                    self.eat_expecting(start_char)
+                instance = ''.join(chars)
+                self.push_token('instance_quote_string', instance, multi_line_start)
+                break
+            else:
+                chars.append(self.char)
+                self.eat()
+
+    def lex_hash_comment(self) -> None:
         self.eat_expecting('#')
         chars: list[str] = []
         while self.pos < len(self.src) and self.char != '\n':
             chars.append(self.char)
             self.eat()
         instance = ''.join(chars)
-        self.push_token('instance_comment', instance)
+        self.push_token('instance_hash_comment', instance)
 
     def lex_indentation(self) -> None:
         # NOTE: We assume 4 for now :)
@@ -376,7 +410,7 @@ def tokens_to_src(tokens: list[Token]) -> str:
     buff = GrowingLineBuffer()
     for token in tokens:
         match (token.kind, token.instance):
-            case ('instance_comment', _):
+            case ('instance_hash_comment', _):
                 assert token.instance is not None
                 content = '#' + token.instance
             case ('instance_indent', _):
@@ -678,42 +712,41 @@ Node: TypeAlias = Union[Module, Stmt, Expr]
 
 
 class Parser:
-    '''
-    --- Grammer ---
-
-    stmts: stmt+
-    stmt:
-        | assign
-        | return
-        | import
-        | raise
-        | pass
-        | break
-        | continue
-        | assert
-        | fun_def
-        | if
-        | class_def
-        | with
-        | for
-        | try
-        | while
-        | match
-    assign:
-        | NAME : expr = expr
-        | NAME assignop expr
-    assignop:
-        | '='
-        | '+='
-        | '-='
-        | '*='
-    return: 'return' expr
-    raise: 'raise' expr
-    assert: 'assert' expr
-    import: import_name | import_from
-    import_name: ...
-    import_from: ...
-    '''
+    # FIXME: The lexer doesn't currenty, correctly manage line numbers for multi-line string.
+    # --- Grammer ---
+    #
+    # stmts: stmt+
+    # stmt:
+    #     | assign
+    #     | return
+    #     | import
+    #     | raise
+    #     | pass
+    #     | break
+    #     | continue
+    #     | assert
+    #     | fun_def
+    #     | if
+    #     | class_def
+    #     | with
+    #     | for
+    #     | try
+    #     | while
+    #     | match
+    # assign:
+    #     | NAME : expr = expr
+    #     | NAME assignop expr
+    # assignop:
+    #     | '='
+    #     | '+='
+    #     | '-='
+    #     | '*='
+    # return: 'return' expr
+    # raise: 'raise' expr
+    # assert: 'assert' expr
+    # import: import_name | import_from
+    # import_name: ...
+    # import_from: ...
 
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens = tokens
